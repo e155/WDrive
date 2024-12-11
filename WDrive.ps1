@@ -36,14 +36,17 @@ function Copy-And-Mount-VHD {
     $vhdxPath=Get-ImagePath
     Copy-Item -Path $CopySource -Destination $vhdxPath -Force
 
-
     if (Test-Path $vhdxPath) {
         Write-Host "Файл успешно скопирован в $vhdxPath"
     } else {
         Write-Host "Не удалось скопировать файл."
         break
     }
-    Mount-VHD -Path $vhdxPath
+    $mountedVHD = Mount-VHD -Path $vhdxPath -PassThru
+    $disk = Get-Disk | Where-Object { $_.UniqueId -eq $mountedVHD.DiskId }
+    # Получаем раздел диска (предполагается, что раздел уже существует)
+    $partition = Get-Partition -DiskNumber $disk.Number
+    Set-Partition -PartitionNumber $partition.PartitionNumber -DriveLetter $drvletter
     $MountSuccess=$true
 }
 
