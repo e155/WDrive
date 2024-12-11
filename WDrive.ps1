@@ -1,8 +1,10 @@
 ﻿Param (
-    [char]$drvletter='W'
+    [char]$drvletter='W',
     [string]$Mode = "Create", #Create | Copy
-    [string]$CopySource = "replace with \\server\share\Image.vhd" # Prefab image                  
-
+    [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image     
+    [int]$vhdSize=10Gb             
+      )
+    $MountSuccess=$false # Check before adding remount Task
 # Проверка наличия модуля Hyper-V
 $featureName = "Microsoft-Hyper-V-All"
 $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName
@@ -24,17 +26,19 @@ function Get-ImagePath {
             # Проверяем свободное место на каждом диске
             if ($disk.Free -gt 10GB) {$vhdxPath = Join-Path $disk.Root "Dev_DriveDLP.vhdx"
             return $vhdxPath}
-            }
-            else {$vhdxPath = Join-Path $disk.Root "c:\DevDrive\Dev_DriveDLP.vhdx"}}
+            }}
+         else {$vhdxPath = "c:\DevDrive\Dev_DriveDLP.vhdx"}
             
             return $vhdxPath
 }
+
+function Copy-And-Mount-VHD {}
 
 # Функция для проверки и монтирования VHDX
 function Create-And-Mount-VHD {
 
                 # Путь для хранения VHDX файла
-                
+                $vhdxPath=Get-ImagePath
                 
                 # Проверяем, существует ли уже VHDX
                 if (-Not (Test-Path $vhdxPath)) {
@@ -103,5 +107,7 @@ function Create-Task
                                                -RunLevel Highest
 }
 # Выполнение основной функции
+if ($Mode -eq "Create") {Create-And-Mount-VHD}
+  esle {Copy-And-Mount-VHD} 
 Create-And-Mount-VHD
 Create-Task
