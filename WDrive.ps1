@@ -2,8 +2,9 @@
     [char]$drvletter='W',
     [string]$Mode = "Create", #Create | Copy
     [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image     
-    [int]$vhdSize=10Gb             
+    [int]$vhdSize=10GB            
       )
+
     $MountSuccess=$false # Check before adding remount Task
 # Проверка наличия модуля Hyper-V
 $featureName = "Microsoft-Hyper-V-All"
@@ -24,15 +25,25 @@ function Get-ImagePath {
     if ($disks.Count -gt 0) {
         foreach ($disk in $disks) {
             # Проверяем свободное место на каждом диске
-            if ($disk.Free -gt 10GB) {$vhdxPath = Join-Path $disk.Root "Dev_DriveDLP.vhdx"
+            if ($disk.Free -gt $vhdSize) {$vhdxPath = Join-Path $disk.Root "Dev_DriveDLP.vhdx"
             return $vhdxPath}
             }}
-         else {$vhdxPath = "c:\DevDrive\Dev_DriveDLP.vhdx"}
+         else {$vhdxPath = "C:\DevDrive\Dev_DriveDLP.vhdx"}
             
             return $vhdxPath
 }
 
-function Copy-And-Mount-VHD {}
+function Copy-And-Mount-VHD {
+    Copy-Item -Path $CopySource -Destination $vhdxPath -Force
+
+
+    if (Test-Path $vhdxPath) {
+        Write-Host "Файл успешно скопирован в $vhdxPath"
+    } else {
+        Write-Host "Не удалось скопировать файл."
+    }
+    Mount-VHD -Path $vhdxPath
+}
 
 # Функция для проверки и монтирования VHDX
 function Create-And-Mount-VHD {
@@ -48,19 +59,15 @@ function Create-And-Mount-VHD {
                     # Монтируем VHDX
                     Mount-VHD -Path $vhdxPath
                     
-                    # Проверяем, доступна ли буква W:
-                    $drvletter='W'
-
-
-
+                    
                     $drvlist=(Get-PSDrive -PSProvider filesystem).Name
                      If ($drvlist -notcontains $drvletter) {
                         # Инициализируем VHD и форматируем его
                         # Ищем первый диск с PartitionStyle "RAW"
-$rawDisk = Get-Disk | Where-Object { $_.PartitionStyle -eq "RAW" } | Select-Object -First 1
+                        $rawDisk = Get-Disk | Where-Object { $_.PartitionStyle -eq "RAW" } | Select-Object -First 1
 
-if ($null -eq $rawDisk) {
-    Write-Host "Не найден диск с PartitionStyle 'RAW'. Убедитесь, что VHDX корректно создан и подключен."
+                        if ($null -eq $rawDisk) {
+                Write-Host "Не найден диск с PartitionStyle 'RAW'. Убедитесь, что VHDX корректно создан и подключен."
     return
 }
 
