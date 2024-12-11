@@ -1,7 +1,7 @@
-﻿$drvletter='W'
-# Create | Copy
-$Mode=Create
-$CopySource="\\server\share"
+﻿Param (
+    [char]$drvletter='W'
+    [string]$Mode = "Create", #Create | Copy
+    [string]$CopySource = "replace with \\server\share\Image.vhd" # Prefab image                  
 
 # Проверка наличия модуля Hyper-V
 $featureName = "Microsoft-Hyper-V-All"
@@ -15,18 +15,26 @@ if ($feature.State -ne "Enabled") {
    # shutdown.exe /r /t 0
   #  exit
 }
-
-# Функция для проверки и монтирования VHDX
-function Create-And-Mount-VHD {
-    # Проверяем количество дисков, кроме диска C:
+function Get-ImagePath {
+    # Проверяем количество дисков, кроме диска C: и сетевых
     $disks = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Name -ne "C" -and -not ($_.DisplayRoot -like "\\*") }
 
     if ($disks.Count -gt 0) {
         foreach ($disk in $disks) {
             # Проверяем свободное место на каждом диске
-            if ($disk.Free -gt 10GB) {
+            if ($disk.Free -gt 10GB) {$vhdxPath = Join-Path $disk.Root "Dev_DriveDLP.vhdx"
+            return $vhdxPath}
+            }
+            else {$vhdxPath = Join-Path $disk.Root "c:\DevDrive\Dev_DriveDLP.vhdx"}}
+            
+            return $vhdxPath
+}
+
+# Функция для проверки и монтирования VHDX
+function Create-And-Mount-VHD {
+
                 # Путь для хранения VHDX файла
-                $vhdxPath = Join-Path $disk.Root "Dev_DriveDLP.vhdx"
+                
                 
                 # Проверяем, существует ли уже VHDX
                 if (-Not (Test-Path $vhdxPath)) {
