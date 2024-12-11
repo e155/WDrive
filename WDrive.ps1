@@ -33,6 +33,7 @@ function Get-ImagePath {
 }
 
 function Copy-And-Mount-VHD {
+    $vhdxPath=Get-ImagePath
     Copy-Item -Path $CopySource -Destination $vhdxPath -Force
 
 
@@ -40,8 +41,10 @@ function Copy-And-Mount-VHD {
         Write-Host "Файл успешно скопирован в $vhdxPath"
     } else {
         Write-Host "Не удалось скопировать файл."
+        break
     }
-
+    Mount-VHD -Path $vhdxPath
+    $MountSuccess=$true
 }
 
 # Функция для проверки и монтирования VHDX
@@ -53,7 +56,7 @@ function Create-And-Mount-VHD {
                 # Проверяем, существует ли уже VHDX
                 if (-Not (Test-Path $vhdxPath)) {
                     # Создаем VHDX диск
-                    New-VHD -Path $vhdxPath -SizeBytes 10GB -Dynamic
+                    New-VHD -Path $vhdxPath -SizeBytes $vhdSize -Dynamic
                     
                     # Монтируем VHDX
                     Mount-VHD -Path $vhdxPath
@@ -79,6 +82,7 @@ $partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLet
 Format-Volume -DriveLetter $partition.DriveLetter -FileSystem NTFS -NewFileSystemLabel "Dev_Drive"
 
 Write-Host "Диск успешно создан и форматирован."
+$MountSuccess=$true
 
                         
                         
@@ -111,6 +115,13 @@ function Create-Task
                                                -RunLevel Highest
 }
 # Выполнение основной функции
-if ($Mode -eq "Create") {Create-And-Mount-VHD}
-  esle {Copy-And-Mount-VHD} 
-Create-Task
+if ($Mode -eq "Create") {
+    Create-And-Mount-VHD
+    }  else {
+    Copy-And-Mount-VHD
+    } 
+    # Adding to Task if mount successful
+    if ($MountSuccess) {
+    Create-Task
+    } 
+    
