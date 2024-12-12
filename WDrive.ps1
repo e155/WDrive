@@ -82,7 +82,7 @@ Initialize-Disk -Number $rawDisk.Number -PartitionStyle MBR
 $partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLetter $drvletter
 
 # Форматируем раздел
-Format-Volume -DriveLetter $partition.DriveLetter -FileSystem NTFS -NewFileSystemLabel "Dev_Drive"
+Format-Volume -DriveLetter $partition.DriveLetter -FileSystem NTFS -NewFileSystemLabel "Dev_Drive" -DevDrive
 
 Write-Host "Диск успешно создан и форматирован."
 $MountSuccess=$true
