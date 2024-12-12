@@ -2,7 +2,7 @@
     [char]$drvletter='W',
     [string]$Mode = "Create", #Create | Copy
     [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image     
-    [string]$vhdSize=10GB             
+    [string]$vhdSize=51GB             
       )
     $MountSuccess=$false # Check before adding remount Task
 # Проверка наличия модуля Hyper-V
@@ -63,6 +63,7 @@ function Create-And-Mount-VHD {
                     
                     # Монтируем VHDX
                     Mount-VHD -Path $vhdxPath
+                    $MountSuccess=$true
                     
                     $drvlist=(Get-PSDrive -PSProvider filesystem).Name
                      If ($drvlist -notcontains $drvletter) {
@@ -82,10 +83,10 @@ Initialize-Disk -Number $rawDisk.Number -PartitionStyle MBR
 $partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLetter $drvletter
 
 # Форматируем раздел
-Format-Volume -DriveLetter $partition.DriveLetter -FileSystem NTFS -NewFileSystemLabel "Dev_Drive" #-DevDrive # unsupported
+Format-Volume -DriveLetter $partition.DriveLetter -FileSystem ReFS -NewFileSystemLabel "Dev_Drive" -DevDrive
 
 Write-Host "Диск успешно создан и форматирован."
-$MountSuccess=$true
+
 
                         
                         
@@ -97,9 +98,7 @@ $MountSuccess=$true
                     Write-Host "Файл $vhdxPath уже существует."
                 }
                 break
-            } else {
-                Write-Host "На диске $($disk.Name): недостаточно свободного места."
-            }
+            } 
         
     
 
@@ -120,7 +119,7 @@ function Create-Task
 # Выполнение основной функции
 if ($Mode -eq "Create") {
     Create-And-Mount-VHD
-    }  else {
+    }  else{
     Copy-And-Mount-VHD
     } 
     # Adding to Task if mount successful
