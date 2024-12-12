@@ -2,9 +2,10 @@
     [char]$drvletter='W',
     [string]$Mode = "Create", #Create | Copy
     [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image     
-    [string]$vhdSize=51GB             
+    [string]$vhdSize=51GB,
+    [bool]$MountSuccess=$false             
       )
-    $MountSuccess=$false # Check before adding remount Task
+     # Check before adding remount Task
 # Проверка наличия модуля Hyper-V
 $featureName = "Microsoft-Hyper-V-All"
 $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName
@@ -48,6 +49,8 @@ function Copy-And-Mount-VHD {
     $partition = Get-Partition -DiskNumber $disk.Number
     Set-Partition -PartitionNumber $partition.PartitionNumber -DriveLetter $drvletter
     $MountSuccess=$true
+    Add-Content -Path "W:\ReadMe.txt" -Value "This drive image file located in: $vhdxPath"
+
 }
 
 # Функция для проверки и монтирования VHDX
@@ -86,7 +89,7 @@ $partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLet
 Format-Volume -DriveLetter $partition.DriveLetter -FileSystem ReFS -NewFileSystemLabel "Dev_Drive" -DevDrive
 
 Write-Host "Диск успешно создан и форматирован."
-
+Add-Content -Path "W:\ReadMe.txt" -Value "This drive image file located in: $vhdxPath"
 
                         
                         
@@ -119,7 +122,7 @@ function Create-Task
 # Выполнение основной функции
 if ($Mode -eq "Create") {
     Create-And-Mount-VHD
-    }  else{
+    }  elseif ($Mode -eq "Copy"){
     Copy-And-Mount-VHD
     } 
     # Adding to Task if mount successful
