@@ -126,4 +126,4 @@ if ($Mode -eq "Create") {
     if ($MountSuccess) {
     Create-Task
     } 
-    
+    set-MpPreference -PerformanceModeStatus Enabled
