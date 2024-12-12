@@ -1,7 +1,8 @@
 ﻿Param (
     [char]$drvletter='W',
-    [string]$Mode = "Create", #Create | Copy
-    [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image     
+    [string]$Mode = "Create", #Create | CopyVHD | CopyBundle
+    [string]$CopySource = "replace with \\server\share\Image.vhd", # Prefab image  or source files 
+    [string]$CopyBundle="No", # Yes|No, source files should be in $CopySource location     
     [string]$vhdSize=51GB             
       )
     $MountSuccess=$false # Check before adding remount Task
@@ -47,7 +48,8 @@ function Copy-And-Mount-VHD {
     # Получаем раздел диска (предполагается, что раздел уже существует)
     $partition = Get-Partition -DiskNumber $disk.Number
     Set-Partition -PartitionNumber $partition.PartitionNumber -DriveLetter $drvletter
-    $MountSuccess=$true
+    Add-Content -Path "W:\ReadMe.txt" -Value "This drive image file located in: $vhdxPath"
+    Create-Task
 }
 
 # Функция для проверки и монтирования VHDX
@@ -71,22 +73,25 @@ function Create-And-Mount-VHD {
                         # Ищем первый диск с PartitionStyle "RAW"
                         $rawDisk = Get-Disk | Where-Object { $_.PartitionStyle -eq "RAW" } | Select-Object -First 1
 
-if ($null -eq $rawDisk) {
-    Write-Host "Не найден диск с PartitionStyle 'RAW'. Убедитесь, что VHDX корректно создан и подключен."
-    return
-}
+                      if ($null -eq $rawDisk) {
+                               Write-Host "Не найден диск с PartitionStyle 'RAW'. Убедитесь, что VHDX корректно создан и подключен."
+                                 return
+                                 }
 
-# Инициализируем диск
-Initialize-Disk -Number $rawDisk.Number -PartitionStyle MBR
+                            # Инициализируем диск
+                            Initialize-Disk -Number $rawDisk.Number -PartitionStyle MBR
 
-# Создаем новый раздел и присваиваем ему букву
-$partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLetter $drvletter
+                            # Создаем новый раздел и присваиваем ему букву
+                            $partition = New-Partition -DiskNumber $rawDisk.Number -UseMaximumSize -DriveLetter $drvletter
 
-# Форматируем раздел
-Format-Volume -DriveLetter $partition.DriveLetter -FileSystem ReFS -NewFileSystemLabel "Dev_Drive" -DevDrive
+                            # Форматируем раздел
+                            Format-Volume -DriveLetter $partition.DriveLetter -FileSystem ReFS -NewFileSystemLabel "Dev_Drive" -DevDrive
 
-Write-Host "Диск успешно создан и форматирован."
+                            Write-Host "Диск успешно создан и форматирован."
 
+                            if ($CopyBundle -eq "Yes") {Copy-Item -Path $CopySource -Destination W:\ -Force -Recurse}
+                            Add-Content -Path "W:\ReadMe.txt" -Value "This drive image file located in: $vhdxPath"
+                            Create-Task
 
                         
                         
@@ -123,7 +128,7 @@ if ($Mode -eq "Create") {
     Copy-And-Mount-VHD
     } 
     # Adding to Task if mount successful
-    if ($MountSuccess) {
-    Create-Task
-    } 
+   # if ($MountSuccess) {
+   # Create-Task
+  #  } 
     set-MpPreference -PerformanceModeStatus Enabled
