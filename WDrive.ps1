@@ -5,8 +5,8 @@
     [string]$CopyBundle="No", # Yes|No, source files should be in $CopySource location     
     [string]$vhdSize=51GB             
       )
-    $MountSuccess=$false # Check before adding remount Task
-# Проверка наличия модуля Hyper-V
+  
+      # Проверка наличия модуля Hyper-V
 $featureName = "Microsoft-Hyper-V-All"
 $feature = Get-WindowsOptionalFeature -Online -FeatureName $featureName
 
@@ -65,8 +65,7 @@ function Create-And-Mount-VHD {
                     
                     # Монтируем VHDX
                     Mount-VHD -Path $vhdxPath
-                    $MountSuccess=$true
-                    
+                                       
                     $drvlist=(Get-PSDrive -PSProvider filesystem).Name
                      If ($drvlist -notcontains $drvletter) {
                         # Инициализируем VHD и форматируем его
@@ -127,8 +126,4 @@ if ($Mode -eq "Create") {
     }  else{
     Copy-And-Mount-VHD
     } 
-    # Adding to Task if mount successful
-   # if ($MountSuccess) {
-   # Create-Task
-  #  } 
-    set-MpPreference -PerformanceModeStatus Enabled
+      set-MpPreference -PerformanceModeStatus Enabled
